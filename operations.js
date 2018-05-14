@@ -184,7 +184,7 @@ exports.backupCloudObjectStorage = function() {
         };
       }
 
-			config.endpoint: environment.cos_endpoint_url;
+			config.endpoint = environment.cos_endpoint_url;
 			config.ibmAuthEndpoint = 'https://iam.ng.bluemix.net/oidc/token';
 
       //Authenticate
