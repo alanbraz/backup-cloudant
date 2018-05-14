@@ -132,9 +132,9 @@ exports.backupObjectStorage = function() {
   });
 };
 
-exports.backupCloudObjectStorage = function() {
+exports.backupCloudObjectStorage = function(database_name) {
 
-  console.log("Executing Cloudant Backup operation...");
+  console.log("Executing Cloudant DB -- "+ database_name +" -- Backup operation...");
 
   var opts, config;
 
@@ -145,14 +145,14 @@ exports.backupCloudObjectStorage = function() {
 
     opts = {
       "COUCH_URL": credentials.url,
-      "COUCH_DATABASE": environment.database_name,
+      "COUCH_DATABASE": database_name,
       "COUCH_BUFFER_SIZE": 500
     };
   } else {
     console.log("Using Remote Cloudant");
     opts = {
       "COUCH_URL": environment.cloudant_url,
-      "COUCH_DATABASE": environment.database_name,
+      "COUCH_DATABASE": database_name,
       "COUCH_BUFFER_SIZE": 500
     };
   }
@@ -193,7 +193,7 @@ exports.backupCloudObjectStorage = function() {
       //Upload file
       var fs = require('fs');
       var date = new Date();
-			var dbName = environment.database_name.replace(/_/g, '-');
+			var dbName = database_name.replace(/_/g, '-');
       var fileName = dbName + "-" + date.toISOString() + ".json";
 			var bucketName = "cloudant-db-" + dbName + "-" + date.toLocaleString('en-us', { year: 'numeric' }) + "-" + date.toLocaleString('en-us', { month: '2-digit' });
 
@@ -223,4 +223,23 @@ exports.backupCloudObjectStorage = function() {
       });
     }
   });
+};
+
+exports.backupDatabases = function() {
+
+  let dbs = [];
+
+  if (environment.database_names.indexOf(",")>-1) {
+    let db_names = environment.database_names.split(",");
+    for (let db of db_names) {
+      dbs.push(db.trim());
+    }
+  } else {
+    dbs.push(environment.database_names);
+  }
+
+  for (let dbName of dbs) {
+    exports.backupCloudObjectStorage(dbName);
+  }
+
 };
