@@ -6,8 +6,9 @@ applications:
   name: backup-cloudant
   host: backup-cloudant
   disk_quota: 1024M
+  buildpack: sdk-for-nodejs
   env:
-    backup_interval: 86400000
+    cronjob_schedule: "0 0 * * *"
     database_names: "database1,database2,database3"
     cloudant_url: ""
     cos_endpoint_url: "https://s3-api.us-geo.objectstorage.softlayer.net"

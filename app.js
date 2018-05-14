@@ -14,8 +14,8 @@ var operations = require('./operations');
 // create a new express server
 var app = express();
 
-//run the backup every 24 hours, or 86400000 milliseconds
-setInterval( operations.backupCloudObjectStorage, environment.backup_interval);
+var schedule = require('node-schedule');
+schedule.scheduleJob(environment.cronjob_schedule, operations.backupDatabases);
 
 //serve the files out of ./public as our main files
 app.use(express.static(__dirname + '/public'));

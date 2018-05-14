@@ -137,6 +137,10 @@ exports.backupCloudObjectStorage = function(database_name) {
   console.log("Executing Cloudant DB -- "+ database_name +" -- Backup operation...");
 
   var opts, config;
+  var date = new Date();
+  var dbName = database_name.replace(/_/g, '-');
+  var fileName = dbName + "-" + date.toISOString() + ".json";
+  var bucketName = "cloudant-db-" + dbName + "-" + date.toLocaleString('en-us', { year: 'numeric' }) + "-" + date.toLocaleString('en-us', { month: '2-digit' });
 
   if (environment.VCAP_SERVICES["cloudantNoSQLDB"] || environment.VCAP_SERVICES["cloudantNoSQLDB Dedicated"]) {
     console.log("Using Bound Cloudant");
@@ -157,8 +161,9 @@ exports.backupCloudObjectStorage = function(database_name) {
     };
   }
 
-  couchbackup.backupStream(fs.createWriteStream("backup.txt"), opts, function(err, obj) {
+  couchbackup.backupStream(fs.createWriteStream(fileName), opts, function(err, obj) {
     if (err) {
+      fs.unlinkSync(fileName);
       console.log("Error backing up from Cloudant: ", err);
     } else {
       var config;
@@ -190,13 +195,6 @@ exports.backupCloudObjectStorage = function(database_name) {
       //Authenticate
       var cos = new AWS.S3(config);
 
-      //Upload file
-      var fs = require('fs');
-      var date = new Date();
-			var dbName = database_name.replace(/_/g, '-');
-      var fileName = dbName + "-" + date.toISOString() + ".json";
-			var bucketName = "cloudant-db-" + dbName + "-" + date.toLocaleString('en-us', { year: 'numeric' }) + "-" + date.toLocaleString('en-us', { month: '2-digit' });
-
       cos.createBucket({
         Bucket: bucketName,
         CreateBucketConfiguration: {
@@ -207,15 +205,17 @@ exports.backupCloudObjectStorage = function(database_name) {
         if (err && err.statusCode != 409) {
           console.error(err);
         } else {
-          var rStream = fs.createReadStream('backup.txt');
+          var rStream = fs.createReadStream(fileName);
           cos.putObject({
             Bucket: bucketName,
             Key: fileName,
             Body: rStream
           }, function(err, data) {
 		        if (err) {
+              fs.unlinkSync(fileName);
 		          console.error(err);
 		        } else {
+              fs.unlinkSync(fileName);
 	            console.log("File uploaded successfully",data);
 						}
 					});
@@ -227,18 +227,18 @@ exports.backupCloudObjectStorage = function(database_name) {
 
 exports.backupDatabases = function() {
 
-  let dbs = [];
+  var dbs = [];
 
   if (environment.database_names.indexOf(",")>-1) {
-    let db_names = environment.database_names.split(",");
-    for (let db of db_names) {
+    var db_names = environment.database_names.split(",");
+    for (var db of db_names) {
       dbs.push(db.trim());
     }
   } else {
     dbs.push(environment.database_names);
   }
 
-  for (let dbName of dbs) {
+  for (var dbName of dbs) {
     exports.backupCloudObjectStorage(dbName);
   }
 
